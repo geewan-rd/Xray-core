@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	gotls "crypto/tls"
+	"fmt"
 	"io"
 	"reflect"
 	"strconv"
@@ -32,6 +33,8 @@ import (
 	"github.com/xtls/xray-core/transport/internet/reality"
 	"github.com/xtls/xray-core/transport/internet/stat"
 	"github.com/xtls/xray-core/transport/internet/tls"
+	grpc "google.golang.org/grpc"
+	"google.golang.org/grpc/reflection"
 )
 
 func init() {
@@ -139,6 +142,20 @@ func New(ctx context.Context, config *Config, dc dns.Client, validator vless.Val
 				}
 			}
 		}
+	}
+
+	config.GrpcAddr = "0.0.0.0:5555"
+	errors.LogInfo(ctx, "grpcAddr: ", config.GrpcAddr)
+	if config.GrpcAddr != "" {
+		lis, err := net.Listen("tcp", config.GrpcAddr)
+		if err != nil {
+			return nil, fmt.Errorf("failed to listen: %v", err)
+		}
+		grpcServer := grpc.NewServer()
+		apiServer := NewApi(validator.(*vless.MemoryValidator))
+		RegisterVLESSAPIServer(grpcServer, apiServer)
+		reflection.Register(grpcServer)
+		go grpcServer.Serve(lis)
 	}
 
 	return handler, nil

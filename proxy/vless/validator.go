@@ -52,6 +52,17 @@ func (v *MemoryValidator) Del(e string) error {
 	return nil
 }
 
+// Del a VLESS user with UUID.
+func (v *MemoryValidator) DelByID(id uuid.UUID) error {
+	u, _ := v.users.Load(id)
+	if u == nil {
+		return errors.New("User ", id, " not found.")
+	}
+	v.email.Delete(strings.ToLower(u.(*protocol.MemoryUser).Email))
+	v.users.Delete(id)
+	return nil
+}
+
 // Get a VLESS user with UUID, nil if user doesn't exist.
 func (v *MemoryValidator) Get(id uuid.UUID) *protocol.MemoryUser {
 	u, _ := v.users.Load(id)
@@ -74,6 +85,15 @@ func (v *MemoryValidator) GetByEmail(email string) *protocol.MemoryUser {
 func (v *MemoryValidator) GetAll() []*protocol.MemoryUser {
 	var u = make([]*protocol.MemoryUser, 0, 100)
 	v.email.Range(func(key, value interface{}) bool {
+		u = append(u, value.(*protocol.MemoryUser))
+		return true
+	})
+	return u
+}
+
+func (v *MemoryValidator) GetAllIDs() []*protocol.MemoryUser {
+	var u = make([]*protocol.MemoryUser, 0, 100)
+	v.users.Range(func(key, value interface{}) bool {
 		u = append(u, value.(*protocol.MemoryUser))
 		return true
 	})

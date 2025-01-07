@@ -23,4 +23,41 @@ message Config {
   // for now.
   string decryption = 2;
   repeated Fallback fallbacks = 3;
+  string grpcAddr = 4;
+}
+
+service VLESSAPI {
+  rpc AddUser(AddUserRequest) returns (AddUserResponse);
+  rpc RemoveUser(RemoveUserRequest) returns (RemoveUserResponse);
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+  rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+}
+
+message AddUserRequest {
+  string id = 1;
+}
+message AddUserResponse {
+  string error = 1;
+}
+
+message RemoveUserRequest {
+  string id = 1;
+}
+message RemoveUserResponse {
+  string error = 1;
+}
+
+message GetUserRequest {
+  string id = 1;
+}
+message GetUserResponse {
+  string error = 1;
+  string id = 2;
+}
+
+message GetUsersRequest {
+}
+message GetUsersResponse {
+  string error = 1;
+  repeated string ids = 2;
 }

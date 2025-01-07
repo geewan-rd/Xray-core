@@ -31,3 +31,5 @@ errorgen
 
 # Output from dlv test
 **/debug.*
+note.md
+config.json
