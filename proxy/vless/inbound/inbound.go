@@ -144,7 +144,6 @@ func New(ctx context.Context, config *Config, dc dns.Client, validator vless.Val
 		}
 	}
 
-	config.GrpcAddr = "0.0.0.0:5555"
 	errors.LogInfo(ctx, "grpcAddr: ", config.GrpcAddr)
 	if config.GrpcAddr != "" {
 		lis, err := net.Listen("tcp", config.GrpcAddr)

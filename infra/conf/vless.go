@@ -32,6 +32,7 @@ type VLessInboundConfig struct {
 	Clients    []json.RawMessage       `json:"clients"`
 	Decryption string                  `json:"decryption"`
 	Fallbacks  []*VLessInboundFallback `json:"fallbacks"`
+	GrpcAddr   string                  `json:"grpcAddr"`
 }
 
 // Build implements Buildable
@@ -72,6 +73,7 @@ func (c *VLessInboundConfig) Build() (proto.Message, error) {
 		return nil, errors.New(`VLESS settings: please add/set "decryption":"none" to every settings`)
 	}
 	config.Decryption = c.Decryption
+	config.GrpcAddr = c.GrpcAddr
 
 	for _, fb := range c.Fallbacks {
 		var i uint16
