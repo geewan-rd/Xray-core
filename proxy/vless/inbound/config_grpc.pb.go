@@ -22,6 +22,7 @@ type VLESSAPIClient interface {
 	RemoveUser(ctx context.Context, in *RemoveUserRequest, opts ...grpc.CallOption) (*RemoveUserResponse, error)
 	GetUser(ctx context.Context, in *GetUserRequest, opts ...grpc.CallOption) (*GetUserResponse, error)
 	GetUsers(ctx context.Context, in *GetUsersRequest, opts ...grpc.CallOption) (*GetUsersResponse, error)
+	UpdateUserRate(ctx context.Context, in *UpdateUserRateRequest, opts ...grpc.CallOption) (*UpdateUserRateResponse, error)
 }
 
 type vLESSAPIClient struct {
@@ -68,6 +69,15 @@ func (c *vLESSAPIClient) GetUsers(ctx context.Context, in *GetUsersRequest, opts
 	return out, nil
 }
 
+func (c *vLESSAPIClient) UpdateUserRate(ctx context.Context, in *UpdateUserRateRequest, opts ...grpc.CallOption) (*UpdateUserRateResponse, error) {
+	out := new(UpdateUserRateResponse)
+	err := c.cc.Invoke(ctx, "/xray.proxy.vless.inbound.VLESSAPI/UpdateUserRate", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // VLESSAPIServer is the server API for VLESSAPI service.
 // All implementations must embed UnimplementedVLESSAPIServer
 // for forward compatibility
@@ -76,6 +86,7 @@ type VLESSAPIServer interface {
 	RemoveUser(context.Context, *RemoveUserRequest) (*RemoveUserResponse, error)
 	GetUser(context.Context, *GetUserRequest) (*GetUserResponse, error)
 	GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error)
+	UpdateUserRate(context.Context, *UpdateUserRateRequest) (*UpdateUserRateResponse, error)
 	mustEmbedUnimplementedVLESSAPIServer()
 }
 
@@ -94,6 +105,9 @@ func (UnimplementedVLESSAPIServer) GetUser(context.Context, *GetUserRequest) (*G
 }
 func (UnimplementedVLESSAPIServer) GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetUsers not implemented")
+}
+func (UnimplementedVLESSAPIServer) UpdateUserRate(context.Context, *UpdateUserRateRequest) (*UpdateUserRateResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateUserRate not implemented")
 }
 func (UnimplementedVLESSAPIServer) mustEmbedUnimplementedVLESSAPIServer() {}
 
@@ -180,6 +194,24 @@ func _VLESSAPI_GetUsers_Handler(srv interface{}, ctx context.Context, dec func(i
 	return interceptor(ctx, in, info, handler)
 }
 
+func _VLESSAPI_UpdateUserRate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateUserRateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(VLESSAPIServer).UpdateUserRate(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/xray.proxy.vless.inbound.VLESSAPI/UpdateUserRate",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(VLESSAPIServer).UpdateUserRate(ctx, req.(*UpdateUserRateRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // VLESSAPI_ServiceDesc is the grpc.ServiceDesc for VLESSAPI service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -202,6 +234,10 @@ var VLESSAPI_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "GetUsers",
 			Handler:    _VLESSAPI_GetUsers_Handler,
+		},
+		{
+			MethodName: "UpdateUserRate",
+			Handler:    _VLESSAPI_UpdateUserRate_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

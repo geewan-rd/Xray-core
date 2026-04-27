@@ -1,6 +1,9 @@
 package vless
 
 import (
+	"sync/atomic"
+
+	"golang.org/x/time/rate"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/xtls/xray-core/common/errors"
@@ -29,6 +32,10 @@ type MemoryAccount struct {
 	Flow string
 	// Encryption of the account. Used for client connections, and only accepts "none" for now.
 	Encryption string
+	// TxLimiter limits server→client traffic (client downlink).
+	TxLimiter atomic.Pointer[rate.Limiter]
+	// RxLimiter limits client→server traffic (client uplink).
+	RxLimiter atomic.Pointer[rate.Limiter]
 }
 
 // Equals implements protocol.Account.Equals().
@@ -45,5 +52,30 @@ func (a *MemoryAccount) ToProto() proto.Message {
 		Id:         a.ID.String(),
 		Flow:       a.Flow,
 		Encryption: a.Encryption,
+	}
+}
+
+// SetRate configures rate limiters for both directions.
+// txBps/rxBps: bytes per second (0 = unlimited).
+// txBurst/rxBurst: burst size in bytes (0 = default to 2*bps).
+func (a *MemoryAccount) SetRate(txBps, txBurst, rxBps, rxBurst uint64) {
+	if txBps == 0 {
+		a.TxLimiter.Store(nil)
+	} else {
+		burst := int(txBurst)
+		if burst == 0 {
+			burst = int(txBps) * 2
+		}
+		a.TxLimiter.Store(rate.NewLimiter(rate.Limit(txBps), burst))
+	}
+
+	if rxBps == 0 {
+		a.RxLimiter.Store(nil)
+	} else {
+		burst := int(rxBurst)
+		if burst == 0 {
+			burst = int(rxBps) * 2
+		}
+		a.RxLimiter.Store(rate.NewLimiter(rate.Limit(rxBps), burst))
 	}
 }

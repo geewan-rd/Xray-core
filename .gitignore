@@ -33,3 +33,4 @@ errorgen
 **/debug.*
 note.md
 config.json
+.sisyphus

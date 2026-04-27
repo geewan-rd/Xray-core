@@ -31,10 +31,15 @@ service VLESSAPI {
   rpc RemoveUser(RemoveUserRequest) returns (RemoveUserResponse);
   rpc GetUser(GetUserRequest) returns (GetUserResponse);
   rpc GetUsers(GetUsersRequest) returns (GetUsersResponse);
+  rpc UpdateUserRate(UpdateUserRateRequest) returns (UpdateUserRateResponse);
 }
 
 message AddUserRequest {
   string id = 1;
+  uint64 tx_bytes_per_sec = 2;
+  uint64 rx_bytes_per_sec = 3;
+  uint64 tx_burst_bytes = 4;
+  uint64 rx_burst_bytes = 5;
 }
 message AddUserResponse {
   string error = 1;
@@ -60,4 +65,15 @@ message GetUsersRequest {
 message GetUsersResponse {
   string error = 1;
   repeated string ids = 2;
+}
+
+message UpdateUserRateRequest {
+  string id = 1;
+  uint64 tx_bytes_per_sec = 2;
+  uint64 rx_bytes_per_sec = 3;
+  uint64 tx_burst_bytes = 4;
+  uint64 rx_burst_bytes = 5;
+}
+message UpdateUserRateResponse {
+  string error = 1;
 }
