@@ -33,6 +33,7 @@ func (a *API) AddUser(ctx context.Context, req *AddUserRequest) (*AddUserRespons
 		Flow:       "xtls-rprx-vision",
 		Encryption: "none",
 	}
+	account.SetRate(req.TxBytesPerSec, req.TxBurstBytes, req.RxBytesPerSec, req.RxBurstBytes)
 	err = a.validator.Add(&protocol.MemoryUser{
 		Account: account,
 	})
@@ -69,4 +70,21 @@ func (a *API) GetUsers(context.Context, *GetUsersRequest) (*GetUsersResponse, er
 		resp.Ids = append(resp.Ids, u.Account.(*vless.MemoryAccount).ID.String())
 	}
 	return resp, nil
+}
+
+func (a *API) UpdateUserRate(ctx context.Context, req *UpdateUserRateRequest) (*UpdateUserRateResponse, error) {
+	if req.Id == "" {
+		return &UpdateUserRateResponse{Error: "ID is empty"}, nil
+	}
+	id, err := uuid.ParseString(req.Id)
+	if err != nil {
+		return &UpdateUserRateResponse{Error: fmt.Sprintf("invalid UUID format: %v", err)}, nil
+	}
+	u := a.validator.Get(id)
+	if u == nil {
+		return &UpdateUserRateResponse{Error: "user not found"}, nil
+	}
+	acc := u.Account.(*vless.MemoryAccount)
+	acc.SetRate(req.TxBytesPerSec, req.TxBurstBytes, req.RxBytesPerSec, req.RxBurstBytes)
+	return &UpdateUserRateResponse{}, nil
 }

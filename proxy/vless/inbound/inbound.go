@@ -541,6 +541,12 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		return errors.New("failed to dispatch request to ", request.Destination()).Base(err).AtWarning()
 	}
 
+	// per-user rate limit (boost-server vless rate limit feature)
+	// RxLimiter limits uplink (client→server): wraps link.Writer
+	// TxLimiter limits downlink (server→client): wraps link.Reader
+	link.Writer = buf.NewRateLimitWriter(ctx, link.Writer, &account.RxLimiter)
+	link.Reader = buf.NewRateLimitReader(ctx, link.Reader, &account.TxLimiter)
+
 	serverReader := link.Reader // .(*pipe.Reader)
 	serverWriter := link.Writer // .(*pipe.Writer)
 	trafficState := proxy.NewTrafficState(account.ID.Bytes())
