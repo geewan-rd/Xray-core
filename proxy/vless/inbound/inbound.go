@@ -12,6 +12,7 @@ import (
 	"time"
 	"unsafe"
 
+	statscmd "github.com/xtls/xray-core/app/stats/command"
 	"github.com/xtls/xray-core/common"
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -27,6 +28,7 @@ import (
 	feature_inbound "github.com/xtls/xray-core/features/inbound"
 	"github.com/xtls/xray-core/features/policy"
 	"github.com/xtls/xray-core/features/routing"
+	feature_stats "github.com/xtls/xray-core/features/stats"
 	"github.com/xtls/xray-core/proxy"
 	"github.com/xtls/xray-core/proxy/vless"
 	"github.com/xtls/xray-core/proxy/vless/encoding"
@@ -153,6 +155,17 @@ func New(ctx context.Context, config *Config, dc dns.Client, validator vless.Val
 		grpcServer := grpc.NewServer()
 		apiServer := NewApi(validator.(*vless.MemoryValidator))
 		RegisterVLESSAPIServer(grpcServer, apiServer)
+		// T10b: also register StatsService on the same gRPC server so that
+		// boost-server can query per-user traffic counters via the same
+		// connection that hosts VLESSAPI (AddUser/RemoveUser/GetUsers).
+		var statsManager feature_stats.Manager
+		if err := core.RequireFeatures(ctx, func(sm feature_stats.Manager) {
+			statsManager = sm
+		}); err == nil && statsManager != nil {
+			statscmd.RegisterStatsServiceServer(grpcServer, statscmd.NewStatsServer(statsManager))
+		} else {
+			errors.LogWarning(ctx, "vless inbound: stats.Manager not available, StatsService not registered: ", err)
+		}
 		reflection.Register(grpcServer)
 		go grpcServer.Serve(lis)
 	}

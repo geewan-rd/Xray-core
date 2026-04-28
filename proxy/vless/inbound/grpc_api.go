@@ -34,7 +34,12 @@ func (a *API) AddUser(ctx context.Context, req *AddUserRequest) (*AddUserRespons
 		Encryption: "none",
 	}
 	account.SetRate(req.TxBytesPerSec, req.TxBurstBytes, req.RxBytesPerSec, req.RxBurstBytes)
+	email := req.Email
+	if email == "" {
+		email = req.Id
+	}
 	err = a.validator.Add(&protocol.MemoryUser{
+		Email:   email,
 		Account: account,
 	})
 	if err != nil {

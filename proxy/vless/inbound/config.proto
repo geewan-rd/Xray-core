@@ -40,6 +40,7 @@ message AddUserRequest {
   uint64 rx_bytes_per_sec = 3;
   uint64 tx_burst_bytes = 4;
   uint64 rx_burst_bytes = 5;
+  string email = 6;
 }
 message AddUserResponse {
   string error = 1;
