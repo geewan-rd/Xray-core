@@ -4,6 +4,9 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"sync/atomic"
+
+	"golang.org/x/time/rate"
 
 	"github.com/xtls/xray-core/common/buf"
 	"github.com/xtls/xray-core/common/errors"
@@ -171,8 +174,9 @@ func DecodeResponseHeader(reader io.Reader, request *protocol.RequestHeader) (*A
 	return responseAddons, nil
 }
 
-// XtlsRead filter and read xtls protocol
-func XtlsRead(reader buf.Reader, writer buf.Writer, timer *signal.ActivityTimer, conn net.Conn, input *bytes.Reader, rawInput *bytes.Buffer, trafficState *proxy.TrafficState, ob *session.Outbound, ctx context.Context) error {
+// XtlsRead filter and read xtls protocol.
+// rateLimiter (optional, may be nil): wraps the direct-copy writer to enforce per-user uplink rate limit during XTLS Vision splice path.
+func XtlsRead(reader buf.Reader, writer buf.Writer, timer *signal.ActivityTimer, conn net.Conn, input *bytes.Reader, rawInput *bytes.Buffer, trafficState *proxy.TrafficState, ob *session.Outbound, ctx context.Context, rateLimiter *atomic.Pointer[rate.Limiter]) error {
 	err := func() error {
 		for {
 			if trafficState.ReaderSwitchToDirectCopy {
@@ -188,7 +192,13 @@ func XtlsRead(reader buf.Reader, writer buf.Writer, timer *signal.ActivityTimer,
 						ob.CanSpliceCopy = 1
 					}
 				}
-				return proxy.CopyRawConnIfExist(ctx, conn, writerConn, writer, timer, inTimer)
+				// Wrap writer with rate limiter so the splice/readV direct-copy path respects per-user rate.
+				// When limiter is set, this also forces non-splice path (see CopyRawConnIfExist).
+				dcWriter := writer
+				if rateLimiter != nil && rateLimiter.Load() != nil {
+					dcWriter = buf.NewRateLimitWriter(ctx, writer, rateLimiter)
+				}
+				return proxy.CopyRawConnIfExist(ctx, conn, writerConn, dcWriter, timer, inTimer)
 			}
 			buffer, err := reader.ReadMultiBuffer()
 			if !buffer.IsEmpty() {
@@ -221,7 +231,8 @@ func XtlsRead(reader buf.Reader, writer buf.Writer, timer *signal.ActivityTimer,
 	return nil
 }
 
-// XtlsWrite filter and write xtls protocol
+// XtlsWrite filter and write xtls protocol.
+// rateLimiter (optional, may be nil): wraps the direct-copy writer to enforce per-user downlink rate limit during XTLS Vision direct-copy path.
 func XtlsWrite(reader buf.Reader, writer buf.Writer, timer signal.ActivityUpdater, conn net.Conn, trafficState *proxy.TrafficState, ob *session.Outbound, ctx context.Context) error {
 	err := func() error {
 		var ct stats.Counter

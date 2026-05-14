@@ -483,6 +483,11 @@ func CopyRawConnIfExist(ctx context.Context, readerConn net.Conn, writerConn net
 	readerConn, readCounter, _ := UnwrapRawConn(readerConn)
 	writerConn, _, writeCounter := UnwrapRawConn(writerConn)
 	reader := buf.NewReader(readerConn)
+	// RateLimitWriter wraps a buf.Writer; splice via TCPConn.ReadFrom bypasses buf.Writer entirely,
+	// which would defeat per-user rate limiting. Force readV path so limiter intercepts every buffer.
+	if _, isRL := writer.(*buf.RateLimitWriter); isRL {
+		return readV(ctx, reader, writer, timer, readCounter)
+	}
 	if runtime.GOOS != "linux" && runtime.GOOS != "android" {
 		return readV(ctx, reader, writer, timer, readCounter)
 	}

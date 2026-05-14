@@ -493,7 +493,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 	switch requestAddons.Flow {
 	case vless.XRV:
 		if account.Flow == requestAddons.Flow {
-			inbound.CanSpliceCopy = 2
+			inbound.CanSpliceCopy = 3
 			switch request.Command {
 			case protocol.RequestCommandUDP:
 				return errors.New(requestAddons.Flow + " doesn't support UDP").AtWarning()
@@ -574,7 +574,7 @@ func (h *Handler) Process(ctx context.Context, network net.Network, connection s
 		if requestAddons.Flow == vless.XRV {
 			ctx1 := session.ContextWithInbound(ctx, nil) // TODO enable splice
 			clientReader = proxy.NewVisionReader(clientReader, trafficState, ctx1)
-			err = encoding.XtlsRead(clientReader, serverWriter, timer, connection, input, rawInput, trafficState, nil, ctx1)
+			err = encoding.XtlsRead(clientReader, serverWriter, timer, connection, input, rawInput, trafficState, nil, ctx1, &account.RxLimiter)
 		} else {
 			// from clientReader.ReadMultiBuffer to serverWriter.WriteMultiBuffer
 			err = buf.Copy(clientReader, serverWriter, buf.UpdateActivity(timer))
