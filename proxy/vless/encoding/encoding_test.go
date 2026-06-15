@@ -48,7 +48,18 @@ func TestRequestSerialization(t *testing.T) {
 	actualRequest, actualAddons, _, err := DecodeRequestHeader(false, nil, &buffer, Validator)
 	common.Must(err)
 
-	if r := cmp.Diff(actualRequest, expectedRequest, cmp.AllowUnexported(protocol.ID{})); r != "" {
+	if r := cmp.Diff(actualRequest, expectedRequest,
+		cmp.AllowUnexported(protocol.ID{}),
+		cmp.Comparer(func(a, b *vless.MemoryAccount) bool {
+			if a == b {
+				return true
+			}
+			if a == nil || b == nil {
+				return false
+			}
+			return a.ID.Equals(b.ID) && a.Flow == b.Flow && a.Encryption == b.Encryption
+		}),
+	); r != "" {
 		t.Error(r)
 	}
 
@@ -120,7 +131,18 @@ func TestMuxRequest(t *testing.T) {
 	actualRequest, actualAddons, _, err := DecodeRequestHeader(false, nil, &buffer, Validator)
 	common.Must(err)
 
-	if r := cmp.Diff(actualRequest, expectedRequest, cmp.AllowUnexported(protocol.ID{})); r != "" {
+	if r := cmp.Diff(actualRequest, expectedRequest,
+		cmp.AllowUnexported(protocol.ID{}),
+		cmp.Comparer(func(a, b *vless.MemoryAccount) bool {
+			if a == b {
+				return true
+			}
+			if a == nil || b == nil {
+				return false
+			}
+			return a.ID.Equals(b.ID) && a.Flow == b.Flow && a.Encryption == b.Encryption
+		}),
+	); r != "" {
 		t.Error(r)
 	}
 

@@ -26,11 +26,14 @@ endif
 ifeq ($(shell echo "$(GOARCH)" | grep -Eq "(mips|mipsle)" && echo true),true) # 
 ADDITION = GOMIPS=softfloat go build -o $(NAME)_softfloat -trimpath -ldflags "$(LDFLAGS)" -v $(MAIN)
 endif
-.PHONY: clean build
+.PHONY: clean build test
 
 build:
 	go build -o $(OUTPUT) $(PARAMS) $(MAIN)
 	$(ADDITION)
+
+test:
+	go test -timeout 1h -v ./...
 
 clean:
 	go clean -v -i $(PWD)
