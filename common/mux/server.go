@@ -309,19 +309,19 @@ func (w *ServerWorker) run(ctx context.Context) {
 
 	defer w.sessionManager.Close()
 
+	go func() {
+		<-ctx.Done()
+		common.Interrupt(input)
+	}()
+
 	for {
-		select {
-		case <-ctx.Done():
-			return
-		default:
-			err := w.handleFrame(ctx, reader)
-			if err != nil {
-				if errors.Cause(err) != io.EOF {
-					errors.LogInfoInner(ctx, err, "unexpected EOF")
-					common.Interrupt(input)
-				}
-				return
+		err := w.handleFrame(ctx, reader)
+		if err != nil {
+			if errors.Cause(err) != io.EOF {
+				errors.LogInfoInner(ctx, err, "unexpected EOF")
+				common.Interrupt(input)
 			}
+			return
 		}
 	}
 }
